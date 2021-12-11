@@ -4,7 +4,7 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 module.exports = {
     mode: 'development',
-    entry: './src/index.js',
+    entry: './src/main.js',
     resolve: {
         alias: {
             Three: path.resolve(
@@ -35,7 +35,7 @@ module.exports = {
                 use: ['style-loader', 'css-loader'],
             },
             {
-                test: /\.glb/,
+                test: /\.(mp4|glb|png|jpg)/,
                 loader: 'file-loader',
                 options: {
                     name: '[path][name].[ext]',
@@ -53,6 +53,7 @@ module.exports = {
         compress: true,
         port: 8081,
         hot: true,
+        static: './src'
     },
     devtool: 'source-map',
 };
