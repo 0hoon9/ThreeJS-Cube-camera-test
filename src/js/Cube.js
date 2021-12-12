@@ -3,11 +3,6 @@ import { OrbitControls } from '../../node_modules/three/examples/jsm/controls/Or
 
 class Cube {
   constructor(cubePath, texturePath) {
-    this.scene = null;
-    this.camera = null;
-    this.renderer = null;
-    this.controls = null;
-
     this.cubePath = cubePath;
     this.texturePath = texturePath;
     this.textureCube = null;
@@ -16,7 +11,14 @@ class Cube {
     this.sphereMaterial = null;
 
     this.init();
+    this.bindEvents();
     this.render();
+  }
+
+  bindEvents() {
+    window.addEventListener('resize', () => {
+      this.onWindowResize();
+    });
   }
 
   init() {
@@ -54,7 +56,6 @@ class Cube {
     this.controls.minDistance = 500;
     this.controls.maxDistance = 2500;
 
-    window.addEventListener( 'resize', this.onWindowResize );
     this.onWindowResize();
   }
 
