@@ -9,6 +9,7 @@ class Cube {
     this.textureBox = null;
     this.sphereMesh = null;
     this.sphereMaterial = null;
+    this.keyStates = {};
 
     this.init();
     this.bindEvents();
@@ -18,6 +19,14 @@ class Cube {
   bindEvents() {
     window.addEventListener('resize', () => {
       this.onWindowResize();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      this.keyStates[event.code] = true;
+    });
+
+    document.addEventListener('keyup', (event) => {
+      this.keyStates[event.code] = false;
     });
   }
 
@@ -59,17 +68,27 @@ class Cube {
     this.onWindowResize();
   }
 
-  render() {
-    const scene = this.scene;
-    const camera = this.camera;
-    const renderer = this.renderer;
-
-    function frame() {
-      camera.lookAt(scene.position);
-      renderer.render(scene, camera);
-      requestAnimationFrame(frame);
+  control() {
+    if (this.keyStates['KeyA']) {
+      this.camera.rotation.y += 0.02;
     }
-    requestAnimationFrame(frame);
+    if (this.keyStates['KeyD']) {
+      this.camera.rotation.y -= 0.02;
+    }
+
+    if (this.keyStates['KeyW']) {
+      this.camera.rotation.x += 0.02;
+    }
+    if (this.keyStates['KeyS']) {
+      this.camera.rotation.x -= 0.02;
+    }
+  }
+
+  render() {
+    this.renderer.render(this.scene, this.camera);
+    this.control();
+
+    requestAnimationFrame(this.render.bind(this));
   }
 
   onWindowResize() {
