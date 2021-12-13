@@ -40,10 +40,8 @@ class Cube {
     this.scene.add(ambient);
 
     const loader = new THREE.CubeTextureLoader();
-    // loader.setPath('images/textures/');
     loader.setPath(this.cubePath);
 
-    // textureCube = loader.load([ 'left.png', 'right.png', 'top.png', 'bottom.png', 'front.png', 'back.png' ]);
     this.textureCube = loader.load( [ 'left.jpg', 'right.jpg', 'top.jpg', 'bottom.jpg', 'back.jpg', 'front.jpg' ] );
     this.textureCube.encoding = THREE.sRGBEncoding;
 
@@ -63,7 +61,25 @@ class Cube {
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.minDistance = 500;
-    this.controls.maxDistance = 2500;
+    this.controls.maxDistance = 1000;
+
+    this.cubeRenderTarget = new THREE.WebGLCubeRenderTarget( 256, {
+      format: THREE.RGBFormat,
+      generateMipmaps: true,
+      minFilter: THREE.LinearMipmapLinearFilter,
+      encoding: THREE.sRGBEncoding // temporary -- to prevent the material's shader from recompiling every frame
+    } );
+
+    this.cubeCamera = new THREE.CubeCamera( 1, 1000, this.cubeRenderTarget );
+
+    this.sphereMaterial = new THREE.MeshBasicMaterial( {
+      envMap: this.cubeRenderTarget.texture,
+      combine: THREE.MultiplyOperation,
+      reflectivity: 1
+    } );
+
+    this.sphereMesh = new THREE.Mesh( new THREE.IcosahedronGeometry( 256, 256 ), this.sphereMaterial );
+    this.scene.add(this.sphereMesh);
 
     this.onWindowResize();
   }
@@ -87,6 +103,8 @@ class Cube {
   render() {
     this.renderer.render(this.scene, this.camera);
     this.control();
+    this.cubeCamera.update( this.renderer, this.scene );
+    this.sphereMaterial.envMap = this.cubeRenderTarget.texture;
 
     requestAnimationFrame(this.render.bind(this));
   }
