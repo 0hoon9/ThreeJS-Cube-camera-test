@@ -11,6 +11,11 @@ class Cube {
     this.sphereMaterial = null;
     this.keyStates = {};
 
+    this.cubeIdx = 0;
+
+    this.hold;
+    this.changeTimer;
+
     this.init();
     this.bindEvents();
     this.render();
@@ -21,13 +26,17 @@ class Cube {
       this.onWindowResize();
     });
 
-    document.addEventListener('keydown', (event) => {
-      this.keyStates[event.code] = true;
-    });
+    window.addEventListener('mousedown', () => {
+      this.onMouseDown();
+    })
 
-    document.addEventListener('keyup', (event) => {
-      this.keyStates[event.code] = false;
-    });
+    window.addEventListener('mouseup', () => {
+      this.onMouseUp();
+    })
+
+    window.addEventListener('mousewheel', () => {
+      this.onMouseWheel();
+    })
   }
 
   init() {
@@ -40,9 +49,9 @@ class Cube {
     this.scene.add(ambient);
 
     const loader = new THREE.CubeTextureLoader();
-    loader.setPath(this.cubePath);
+    loader.setPath(this.cubePath.bridge);
 
-    this.textureCube = loader.load( [ 'left.jpg', 'right.jpg', 'top.jpg', 'bottom.jpg', 'back.jpg', 'front.jpg' ] );
+    this.textureCube = loader.load([ 'left.jpg', 'right.jpg', 'top.jpg', 'bottom.jpg', 'back.jpg', 'front.jpg' ]);
     this.textureCube.encoding = THREE.sRGBEncoding;
 
     const textureLoader = new THREE.TextureLoader();
@@ -63,50 +72,59 @@ class Cube {
     this.controls.minDistance = 500;
     this.controls.maxDistance = 1000;
 
-    this.cubeRenderTarget = new THREE.WebGLCubeRenderTarget( 256, {
+    this.cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, {
       format: THREE.RGBFormat,
       generateMipmaps: true,
       minFilter: THREE.LinearMipmapLinearFilter,
-      encoding: THREE.sRGBEncoding // temporary -- to prevent the material's shader from recompiling every frame
-    } );
+      encoding: THREE.sRGBEncoding
+    });
 
-    this.cubeCamera = new THREE.CubeCamera( 1, 1000, this.cubeRenderTarget );
+    this.cubeCamera = new THREE.CubeCamera(1, 1000, this.cubeRenderTarget);
 
     this.sphereMaterial = new THREE.MeshBasicMaterial( {
       envMap: this.cubeRenderTarget.texture,
       combine: THREE.MultiplyOperation,
-      reflectivity: 1
-    } );
+      reflectivity: 1,
+    });
 
-    this.sphereMesh = new THREE.Mesh( new THREE.IcosahedronGeometry( 256, 256 ), this.sphereMaterial );
-    this.scene.add(this.sphereMesh);
+    this.sphererMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(256, 256), this.sphereMaterial);
+    this.scene.add(this.sphererMesh);
 
     this.onWindowResize();
   }
 
-  control() {
-    if (this.keyStates['KeyA']) {
-      this.camera.rotation.y += 0.02;
-    }
-    if (this.keyStates['KeyD']) {
-      this.camera.rotation.y -= 0.02;
-    }
+  changeCubeBackground() {
+    if(this.cubeIdx < 2) this.cubeIdx += 1;
+    else this.cubeIdx = 0;
 
-    if (this.keyStates['KeyW']) {
-      this.camera.rotation.x += 0.02;
+    const loader = new THREE.CubeTextureLoader();
+    const skyboxArr = [];
+    const skybox = this.cubePath;
+    for(let i in skybox) {
+      skyboxArr.push(i);
     }
-    if (this.keyStates['KeyS']) {
-      this.camera.rotation.x -= 0.02;
-    }
+    loader.setPath(this.cubePath[skyboxArr[this.cubeIdx]]);
+
+    this.textureCube = loader.load([ 'left.jpg', 'right.jpg', 'top.jpg', 'bottom.jpg', 'back.jpg', 'front.jpg' ]);
+    this.textureCube.encoding = THREE.sRGBEncoding;
+    this.scene.background = this.textureCube;
   }
 
   render() {
-    this.renderer.render(this.scene, this.camera);
-    this.control();
-    this.cubeCamera.update( this.renderer, this.scene );
+    this.cubeCamera.update(this.renderer, this.scene);
     this.sphereMaterial.envMap = this.cubeRenderTarget.texture;
+    this.renderer.render(this.scene, this.camera);
 
-    requestAnimationFrame(this.render.bind(this));
+    if(this.hold == undefined || this.hold) {
+      requestAnimationFrame(this.render.bind(this));
+    }
+
+    if(!this.changeTimer) {
+      this.changeTimer = setTimeout(() => {
+        this.changeCubeBackground();
+        this.changeTimer = null;
+      }, 2000)
+    }
   }
 
   onWindowResize() {
@@ -114,6 +132,19 @@ class Cube {
     this.camera.updateProjectionMatrix();
 
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+  
+  onMouseDown() {
+    this.hold = true;
+    this.render();
+  }
+
+  onMouseUp() {
+    this.hold = false;
+  }
+
+  onMouseWheel() {
+    this.render();
   }
 }
 
